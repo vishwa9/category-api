@@ -1,6 +1,7 @@
 var express = require('express');
 
 var status = require('http-status');
+var bodyParser = require('body-parser');
 
 module.exports = function(wagner){
   var api = express.Router();
@@ -18,16 +19,34 @@ module.exports = function(wagner){
       });
     };
   }));
-  
+
+  api.post('/category/create', wagner.invoke(function(Category){
+    return function(req, res){
+
+      var category = new Category();
+
+      category['_id'] = req.body['_id'];
+      category.parent = req.body.parent;
+      category.ancestors = req.body.ancestors;
+
+      category.save(function(error){
+        if(error){
+          return res.status(status.INTERNAL_SERVER_ERROR).json({error: error.toString()});
+        }
+        res.json({message: 'Created'});
+      });
+    };
+  }));
+
   api.get('/category/parent/:id', wagner.invoke(function(Category){
-   return function(req, res) {
-     Category.find({parent:req.params.id}).sort({_id:1}).exec(function(error, categories) {
-      if(error) {
-        return res.status(status.INTERNAL_SERVER_ERROR).json({error:error.toString()});
-      }
-      res.json({categories: categories});
-     });
-   };
+    return function(req, res) {
+      Category.find({parent:req.params.id}).sort({_id:1}).exec(function(error, categories) {
+        if(error) {
+          return res.status(status.INTERNAL_SERVER_ERROR).json({error:error.toString()});
+        }
+        res.json({categories: categories});
+      });
+    };
   }));
   return api;
 }
