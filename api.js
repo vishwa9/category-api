@@ -48,5 +48,61 @@ module.exports = function(wagner){
       });
     };
   }));
+  api.post('/product/create',wagner.invoke(function(Product){
+    return function(req, res){
+      var product =new Product();
+      product.name = req.body.name;
+      product.price.amount = req.body.price.amount;
+      product.category = req.body.Category.categorySchema;
+      product.price.currency = req.body.price.currency;
+
+      product.save(function(error){
+        if(error){
+          return res.status(status.INTERNAL_SERVER_ERROR).json({error: error.toString()});
+        }
+        res.json({message: 'product created successfully'});
+      });
+    };
+  }));
+  api.get('/product/id/:id', wagner.invoke(function(Product){
+    return function(req, res){
+      Product.findOne({ _id: req.params.id},
+        handleOne.bind(null, 'product', res));
+    };
+  }));
+  api.get('/product/category/:id', wagner.invoke(function(Product) {
+    return function(req, res){
+      var sort = {name: 1};
+      if(req.query.price==="1"){
+        sort = {'internal.approximatePriceUSD':1};
+      }else if(req.query.price==="-1"){
+        sort = {'internal.approximatePriceUSD':-1};
+      }
+      Product.find({'category.ancestors': req.params.id}).sort(sort).exec(handleMany.bind(null,'products', res));
+    };
+  }));
   return api;
+}
+function handleOne(property, response, error, result){
+  if(error) {
+    return response.status(status.INTERNAL_SERVER_ERROR).json({error: error.toString()});
+  }
+  if(!result){
+    console.log("result", result);
+    return response.status(status.NOT_FOUND).json({error: 'NOT FOUND'});
+  }
+  var json = {};
+  json[property] = result;
+  response.json(json);
+}
+function handleMany(property, response, error, result){
+  if(error){
+    return response.status(status.INTERNAL_SERVER_ERROR).json({error:error.toString()});
+  }
+  if(!result){
+    return response.status(status.NOT_FOUND).json({error: 'NOT_FOUND'});
+  }
+  var json = {};
+  json[property] = result;
+  response.json(json);
 }
