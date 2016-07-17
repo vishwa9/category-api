@@ -3,9 +3,10 @@ var wagner = require('wagner-core');
 var bodyParser = require('body-parser');
 
 require('./models')(wagner);
+//require('./config')(wagner);
 
 var app = express();
-
+wagner.invoke(require('./auth'),{ app:app});
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
